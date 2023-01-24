@@ -23,9 +23,27 @@ each of the commands is shown below.
 
 ## Commands
 
+### instruments
+
+Retrieve a list of supported instruments from a specified data backend - e.g.:
+
+```shell
+> docker run ghcr.io/alphaweighted/awcli --data localhost:6011 instruments
+OANDA OANDA:EUR_NZD "EUR/NZD"
+OANDA OANDA:USD_SGD "USD/SGD"
+OANDA OANDA:CAD_SGD "CAD/SGD"
+OANDA OANDA:XAG_EUR "Silver/EUR"
+...
+```
+
 ### instrument
 
-TODO
+Retrieve more detailed information about a single specified instrument - e.g.:
+
+```shell
+> docker run ghcr.io/alphaweighted/awcli --data localhost:6011 instrument OANDA:GBP_USD
+...
+```
 
 ### price
 
@@ -55,11 +73,35 @@ Press Ctrl+C, or send a TERM/KILL signal to the process to terminate it.
 
 ### candles
 
-TODO
+Retrieve candles for a specified instrument.  Specify the from/to times, max candle count, resolution and padding behaviour.
+
+Use `--format=plain` in conjunction with piping to a file to produce CSV exports of candle data, for example:
+
+```shell
+> docker run ghcr.io/alphaweighted/awcli --data localhost:6011 candles OANDA:GBP_USD --format plain > candles.csv
+```
+
+Arguments:
+- `from`; datetime to start from, specify as YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS, in GMT/UTC
+- `to`; datetime to extract up to, specify as YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS, in GMT/UTC
+- `count`; max # candles to export
+- `resolution`; candle resolution in seconds, e.g. 60 for M1, 900 for M15, 3600 for H1
+- `pad`; padding to apply; `none` (default), `full` or `open`
+
+The `from`, `to` and `count` parameters are each optional, but only certain combinations are valid:
+- If you specify `from` and `to` then `count will be ignored and the full time range will be extracted 
+- If you specify `from` and `count` then the first `count` candles from the `from` time will be extracted
+- If you specify `to` and `count` then the last `count` candles up to `to` time will be extracted
+- Specifying only one of the three is invalid and will result in an error
+
+The `pad` flag acts to auto-fill 'gaps' in candle data where there were no transactions with empty candles that have a falsified OHLC/vwap and a volume of zero.  The default is `none` - i.e. no padding, which is consistent with typical data and charting tools.  `full` will fill all gaps with a blank candle.  `open` will fill gaps, but only for time periods when the instrument's market is open.
+
 
 ### streamcandles
 
-TODO
+Stream new candles for the specified instrument.  This works in broadly the same way as `streamprice`, in that it runs continuously and emits to `stdout` each time a new candle is available.
+
+It accepts all the same configuration arguments as the `candles` command.
 
 ## Configuration
 
